@@ -77,9 +77,9 @@ export default function Home() {
         const fetchData = async () => {
             try {
                 const [latestRes, historyRes, alertsRes] = await Promise.all([
-                    fetch(`http://localhost:3001/readings/latest`),
-                    fetch(`http://localhost:3001/readings/history?from=${Date.now() - TIME_RANGES[timeRange]}&to=${Date.now()}`),
-                    fetch(`http://localhost:3001/readings/alerts`),
+                    fetch(`${process.env.NEXT_PUBLIC_API_URL}/readings/latest`),
+                    fetch(`${process.env.NEXT_PUBLIC_API_URL}/readings/history?from=${Date.now() - TIME_RANGES[timeRange]}&to=${Date.now()}`),
+                    fetch(`${process.env.NEXT_PUBLIC_API_URL}/readings/alerts`),
                 ]);
 
                 const [latestData, historyData, alertsData] = await Promise.all([
