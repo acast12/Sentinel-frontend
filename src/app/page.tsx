@@ -169,7 +169,7 @@ export default function Home() {
             {/* Guidelines */}
             <div className="bg-gray-900 rounded-xl p-6 mb-8">
                 <h2 className="text-lg font-semibold mb-4">Air Quality Guidelines</h2>
-                <div className="grid grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                     <div>
                         <p className="text-gray-400 text-sm font-medium mb-2">Temperature</p>
                         <p className="text-green-400 text-sm">18–24°C — Comfortable</p>
@@ -246,6 +246,7 @@ export default function Home() {
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="text-gray-400 text-left border-b border-gray-800">
+                                <th className="pb-2">Date</th>
                                 <th className="pb-2">Time</th>
                                 <th className="pb-2">Temp</th>
                                 <th className="pb-2">Humidity</th>
@@ -256,6 +257,13 @@ export default function Home() {
                         <tbody>
                             {alerts.map((a) => (
                                 <tr key={a.id} className="border-b border-gray-800">
+                                    <td className="py-2 text-gray-400">
+                                        {new Date(a.timestamp_ms).toLocaleDateString('en-US', {
+                                            timeZone: 'America/Los_Angeles',
+                                            month: 'short',
+                                            day: 'numeric',
+                                        })}
+                                    </td>
                                     <td className="py-2 text-gray-400">
                                         {new Date(a.timestamp_ms).toLocaleTimeString('en-US', {
                                             timeZone: 'America/Los_Angeles',
