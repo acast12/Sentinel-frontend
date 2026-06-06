@@ -166,6 +166,30 @@ export default function Home() {
                 )}
             </div>
 
+            {/* What are these metrics */}
+            <div className="bg-gray-900 rounded-xl p-6 mb-8">
+                <h2 className="text-lg font-semibold mb-4">About These Metrics</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div>
+                        <p className="text-white font-medium mb-1">eCO2 — Equivalent CO2</p>
+                        <p className="text-gray-400 text-sm">
+                            A proxy measurement for CO2 concentration in the air, measured in parts per million (ppm). 
+                            High eCO2 levels indicate poor ventilation and can cause drowsiness, headaches, 
+                            and difficulty concentrating. Outdoor fresh air is around 400ppm.
+                        </p>
+                    </div>
+                    <div>
+                        <p className="text-white font-medium mb-1">TVOC — Total Volatile Organic Compounds</p>
+                        <p className="text-gray-400 text-sm">
+                            A measurement of airborne chemical compounds released by everyday items like 
+                            furniture, cleaning products, paint, and personal care products, measured in 
+                            parts per billion (ppb). Elevated TVOC levels can cause irritation and long term 
+                            exposure may have health impacts.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             {/* Guidelines */}
             <div className="bg-gray-900 rounded-xl p-6 mb-8">
                 <h2 className="text-lg font-semibold mb-4">Air Quality Guidelines</h2>
