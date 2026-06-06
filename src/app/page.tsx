@@ -141,7 +141,7 @@ export default function Home() {
                         <ReadingCard
                             label="Temperature"
                             value={latest?.temp}
-                            unit="°C"
+                            unit={`°C / ${latest ? ((latest.temp * 9/5) + 32).toFixed(1) : '--'}°F`}
                             status={latest ? getTempStatus(latest.temp) : 'unknown'}
                         />
                         <ReadingCard
