@@ -1,65 +1,276 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect } from 'react';
+import ReadingCard from '@/components/ReadingCard';
+import SensorChart from '@/components/SensorChart';
+import { getTooltipNameProp } from 'recharts/types/util/ChartUtils';
+
+type Reading = {
+    id: number;
+    temp: number;
+    humidity: number;
+    eco2: number;
+    tvoc: number;
+    alert_temp_high: number;
+    alert_temp_low: number;
+    alert_humidity_high: number;
+    alert_humidity_low: number;
+    alert_eco2_warn: number;
+    alert_eco2_bad: number;
+    alert_tvoc_warn: number;
+    alert_tvoc_bad: number;
+    timestamp_ms: number;
+    created_at: string;
+};
+
+type TimeRange = '1H' | '6H' | '24H' | '7D';
+
+const TIME_RANGES: Record<TimeRange, number> = {
+    '1H':  1 * 60 * 60 * 1000,
+    '6H':  6 * 60 * 60 * 1000,
+    '24H': 24 * 60 * 60 * 1000,
+    '7D':  7 * 24 * 60 * 60 * 1000,
+};
+
+const getTempStatus = (v: number) => v > 35 || v < 10 ? 'bad' : v > 28 ? 'warn' : 'good';
+const getHumidityStatus = (v: number) => v > 60 || v < 30 ? 'warn' : 'good';
+const getEco2Status = (v: number) => v > 2000 ? 'bad' : v > 1000 ? 'warn' : 'good';
+const getTvocStatus = (v: number) => v > 660 ? 'bad' : v > 220 ? 'warn' : 'good';
+
+function CardSkeleton() {
+    return (
+        <div className="bg-gray-900 rounded-xl p-6 animate-pulse">
+            <div className="h-3 w-20 bg-gray-800 rounded mb-4" />
+            <div className="h-10 w-24 bg-gray-800 rounded mb-2" />
+            <div className="h-3 w-12 bg-gray-800 rounded" />
+        </div>
+    );
+}
+
+function ChartSkeleton() {
+    return (
+        <div className="bg-gray-900 rounded-xl p-6 animate-pulse">
+            <div className="h-3 w-24 bg-gray-800 rounded mb-4" />
+            <div className="h-48 bg-gray-800 rounded" />
+        </div>
+    );
+}
+
+function TableSkeleton() {
+    return (
+        <div className="animate-pulse space-y-3">
+            {[...Array(3)].map((_, i) => (
+                <div key={i} className="h-8 bg-gray-800 rounded" />
+            ))}
+        </div>
+    );
+}
 
 export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
+    const [latest, setLatest] = useState<Reading | null>(null);
+    const [history, setHistory] = useState<Reading[]>([]);
+    const [alerts, setAlerts] = useState<Reading[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [timeRange, setTimeRange] = useState<TimeRange>('1H');
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [latestRes, historyRes, alertsRes] = await Promise.all([
+                    fetch(`http://localhost:3001/readings/latest`),
+                    fetch(`http://localhost:3001/readings/history?from=${Date.now() - TIME_RANGES[timeRange]}&to=${Date.now()}`),
+                    fetch(`http://localhost:3001/readings/alerts`),
+                ]);
+
+                const [latestData, historyData, alertsData] = await Promise.all([
+                    latestRes.json(),
+                    historyRes.json(),
+                    alertsRes.json(),
+                ]);
+
+                setLatest(latestData);
+                setHistory(historyData);
+                setAlerts(alertsData);
+            } catch (err) {
+                console.error('Fetch error:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+        const interval = setInterval(fetchData, 5000);
+        return () => clearInterval(interval);
+    }, [timeRange]);
+
+    return (
+        <main className="min-h-screen bg-gray-950 text-white px-12 py-8">
+
+            {/* Header */}
+            <div className="mb-8 flex items-start justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold">Sentinel</h1>
+                    <p className="text-gray-400 mt-1">Bedroom — Air Quality Monitor</p>
+                    <p className="text-gray-500 text-sm mt-1">
+                        Last updated:{' '}
+                        {latest
+                            ? new Date(latest.timestamp_ms).toLocaleTimeString('en-US', { timeZone: 'America/Los_Angeles' })
+                            : 'Loading...'}
+                    </p>
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                    <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400" />
+                    </span>
+                    <span className="text-green-400 text-xs font-medium">Live</span>
+                </div>
+            </div>
+
+            {/* Current Readings */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                {loading ? (
+                    <>
+                        <CardSkeleton />
+                        <CardSkeleton />
+                        <CardSkeleton />
+                        <CardSkeleton />
+                    </>
+                ) : (
+                    <>
+                        <ReadingCard
+                            label="Temperature"
+                            value={latest?.temp}
+                            unit="°C"
+                            status={latest ? getTempStatus(latest.temp) : 'unknown'}
+                        />
+                        <ReadingCard
+                            label="Humidity"
+                            value={latest?.humidity}
+                            unit="%"
+                            status={latest ? getHumidityStatus(latest.humidity) : 'unknown'}
+                        />
+                        <ReadingCard
+                            label="eCO2"
+                            value={latest?.eco2}
+                            unit="ppm"
+                            status={latest ? getEco2Status(latest.eco2) : 'unknown'}
+                        />
+                        <ReadingCard
+                            label="TVOC"
+                            value={latest?.tvoc}
+                            unit="ppb"
+                            status={latest ? getTvocStatus(latest.tvoc) : 'unknown'}
+                        />
+                    </>
+                )}
+            </div>
+
+            {/* Guidelines */}
+            <div className="bg-gray-900 rounded-xl p-6 mb-8">
+                <h2 className="text-lg font-semibold mb-4">Air Quality Guidelines</h2>
+                <div className="grid grid-cols-4 gap-6">
+                    <div>
+                        <p className="text-gray-400 text-sm font-medium mb-2">Temperature</p>
+                        <p className="text-green-400 text-sm">18–24°C — Comfortable</p>
+                        <p className="text-red-400 text-sm">Above 35°C / Below 10°C — Alert</p>
+                    </div>
+                    <div>
+                        <p className="text-gray-400 text-sm font-medium mb-2">Humidity</p>
+                        <p className="text-green-400 text-sm">30–60% — Ideal</p>
+                        <p className="text-yellow-400 text-sm">Above 60% — Mold risk</p>
+                        <p className="text-yellow-400 text-sm">Below 30% — Too dry</p>
+                    </div>
+                    <div>
+                        <p className="text-gray-400 text-sm font-medium mb-2">eCO2</p>
+                        <p className="text-green-400 text-sm">Under 1000ppm — Good</p>
+                        <p className="text-yellow-400 text-sm">1000–2000ppm — Poor</p>
+                        <p className="text-red-400 text-sm">Above 2000ppm — Unhealthy</p>
+                    </div>
+                    <div>
+                        <p className="text-gray-400 text-sm font-medium mb-2">TVOC</p>
+                        <p className="text-green-400 text-sm">Under 220ppb — Clean</p>
+                        <p className="text-yellow-400 text-sm">220–660ppb — Concern</p>
+                        <p className="text-red-400 text-sm">Above 660ppb — Unhealthy</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Charts */}
+            <div className="mb-8">
+                <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold">History</h2>
+                    <div className="flex gap-2">
+                        {(['1H', '6H', '24H', '7D'] as TimeRange[]).map((range) => (
+                            <button
+                                key={range}
+                                onClick={() => setTimeRange(range)}
+                                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                                    timeRange === range
+                                        ? 'bg-white text-gray-950'
+                                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                                }`}
+                            >
+                                {range}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {loading ? (
+                        <>
+                            <ChartSkeleton />
+                            <ChartSkeleton />
+                            <ChartSkeleton />
+                            <ChartSkeleton />
+                        </>
+                    ) : (
+                        <>
+                            <SensorChart data={history} dataKey="temp"     label="Temperature" color="#34d399" unit="°C"   timeRange={timeRange}  />
+                            <SensorChart data={history} dataKey="humidity" label="Humidity"    color="#60a5fa" unit="%"    timeRange={timeRange}   />
+                            <SensorChart data={history} dataKey="eco2"     label="eCO2"        color="#f59e0b" unit="ppm"     timeRange={timeRange} />
+                            <SensorChart data={history} dataKey="tvoc"     label="TVOC"        color="#a78bfa" unit="ppb"     timeRange={timeRange} />
+                        </>
+                    )}
+                </div>
+            </div>
+
+            {/* Alerts */}
+            <div className="bg-gray-900 rounded-xl p-6">
+                <h2 className="text-lg font-semibold mb-4">Recent Alerts</h2>
+                {loading ? (
+                    <TableSkeleton />
+                ) : alerts.length === 0 ? (
+                    <p className="text-green-400 text-sm">No alerts — air quality is good</p>
+                ) : (
+                    <table className="w-full text-sm">
+                        <thead>
+                            <tr className="text-gray-400 text-left border-b border-gray-800">
+                                <th className="pb-2">Time</th>
+                                <th className="pb-2">Temp</th>
+                                <th className="pb-2">Humidity</th>
+                                <th className="pb-2">eCO2</th>
+                                <th className="pb-2">TVOC</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {alerts.map((a) => (
+                                <tr key={a.id} className="border-b border-gray-800">
+                                    <td className="py-2 text-gray-400">
+                                        {new Date(a.timestamp_ms).toLocaleTimeString('en-US', {
+                                            timeZone: 'America/Los_Angeles',
+                                        })}
+                                    </td>
+                                    <td className="py-2">{a.temp.toFixed(1)}°C</td>
+                                    <td className="py-2">{a.humidity.toFixed(1)}%</td>
+                                    <td className="py-2">{a.eco2.toFixed(0)}ppm</td>
+                                    <td className="py-2">{a.tvoc.toFixed(0)}ppb</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
+            </div>
+        </main>
+    );
 }
