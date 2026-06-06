@@ -283,40 +283,42 @@ export default function Home() {
                 ) : alerts.length === 0 ? (
                     <p className="text-green-400 text-sm">No alerts — air quality is good</p>
                 ) : (
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="text-gray-400 text-left border-b border-gray-800">
-                                <th className="pb-2">Date</th>
-                                <th className="pb-2">Time</th>
-                                <th className="pb-2">Temp</th>
-                                <th className="pb-2">Humidity</th>
-                                <th className="pb-2">eCO2</th>
-                                <th className="pb-2">TVOC</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {alerts.map((a) => (
-                                <tr key={a.id} className="border-b border-gray-800">
-                                    <td className="py-2 text-gray-400">
-                                        {new Date(a.timestamp_ms).toLocaleDateString('en-US', {
-                                            timeZone: 'America/Los_Angeles',
-                                            month: 'short',
-                                            day: 'numeric',
-                                        })}
-                                    </td>
-                                    <td className="py-2 text-gray-400">
-                                        {new Date(a.timestamp_ms).toLocaleTimeString('en-US', {
-                                            timeZone: 'America/Los_Angeles',
-                                        })}
-                                    </td>
-                                    <td className="py-2">{a.temp.toFixed(1)}°C</td>
-                                    <td className="py-2">{a.humidity.toFixed(1)}%</td>
-                                    <td className="py-2">{a.eco2.toFixed(0)}ppm</td>
-                                    <td className="py-2">{a.tvoc.toFixed(0)}ppb</td>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm min-w-[500px]">
+                            <thead>
+                                <tr className="text-gray-400 text-left border-b border-gray-800">
+                                    <th className="pb-2">Date</th>
+                                    <th className="pb-2">Time</th>
+                                    <th className="pb-2">Temp</th>
+                                    <th className="pb-2">Humidity</th>
+                                    <th className="pb-2">eCO2</th>
+                                    <th className="pb-2">TVOC</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {alerts.map((a) => (
+                                    <tr key={a.id} className="border-b border-gray-800">
+                                        <td className="py-2 text-gray-400">
+                                            {new Date(a.timestamp_ms).toLocaleDateString('en-US', {
+                                                timeZone: 'America/Los_Angeles',
+                                                month: 'short',
+                                                day: 'numeric',
+                                            })}
+                                        </td>
+                                        <td className="py-2 text-gray-400">
+                                            {new Date(a.timestamp_ms).toLocaleTimeString('en-US', {
+                                                timeZone: 'America/Los_Angeles',
+                                            })}
+                                        </td>
+                                        <td className="py-2">{a.temp.toFixed(1)}°C</td>
+                                        <td className="py-2">{a.humidity.toFixed(1)}%</td>
+                                        <td className="py-2">{a.eco2.toFixed(0)}ppm</td>
+                                        <td className="py-2">{a.tvoc.toFixed(0)}ppb</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
             </div>
         </main>
