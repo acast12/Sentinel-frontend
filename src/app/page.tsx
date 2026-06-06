@@ -175,7 +175,15 @@ export default function Home() {
                         <p className="text-gray-400 text-sm">
                             A proxy measurement for CO2 concentration in the air, measured in parts per million (ppm). 
                             High eCO2 levels indicate poor ventilation and can cause drowsiness, headaches, 
-                            and difficulty concentrating. Outdoor fresh air is around 400ppm.
+                            and difficulty concentrating. Outdoor fresh air is around 400ppm.{' '}
+                            <a 
+                                href="https://www.epa.gov/indoor-air-quality-iaq/can-i-measure-carbon-dioxide-co2-indoors-get-information-ventilation"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-400 hover:text-blue-300 underline"
+                            >
+                                Learn more via the EPA
+                            </a>
                         </p>
                     </div>
                     <div>
@@ -184,7 +192,15 @@ export default function Home() {
                             A measurement of airborne chemical compounds released by everyday items like 
                             furniture, cleaning products, paint, and personal care products, measured in 
                             parts per billion (ppb). Elevated TVOC levels can cause irritation and long term 
-                            exposure may have health impacts.
+                            exposure may have health impacts.{' '}
+                            <a 
+                                href="https://www.epa.gov/indoor-air-quality-iaq/volatile-organic-compounds-impact-indoor-air-quality"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-400 hover:text-blue-300 underline"
+                            >
+                                Learn more via the EPA
+                            </a>
                         </p>
                     </div>
                 </div>
